@@ -1,0 +1,17 @@
+#a gff file containing fields for gene_id, gene_name, and gene_type
+#ref_file=example_data/gencode.v25.annotation_geneonly.gff
+#counts of mRNA and lncRNA, column names should match and rownames should be ensembl gene_id
+#mRNA_file=example_data/DESeq2_hMSC_normalized_counts_mRNA_v25.txt
+#linc_file=example_data/DESeq2_hMSC_normalized_counts_lncRNA_v25.txt
+COUNTS_FILE=DESeq2_hMSC_normalized_counts_v25.txt
+#
+LNC_DE_PATTERN=_Significant_lncRNAs_v25.txt
+MRNA_DE_PATTERN=_Significant_mRNAs_v25.txt
+#
+REF_FILE=gencode.v25.annotation_geneonly.gff
+#
+MAIN_DIR=H:/projects/Coralee/regulation_and_correlation_public
+SCRIPT_DIR=H:/projects/Coralee/regulation_and_correlation_public
+DATA_DIR=example_data
+OUTPUT_DIR=example_output
+MAX_DIST=10^5

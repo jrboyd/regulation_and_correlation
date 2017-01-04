@@ -1,46 +1,58 @@
-if(exists("script_dir")) setwd(script_dir)
 source("parse_gtf.R")
-script_dir = getwd()
-data_dir = "Z:/Coralee/From_Joe/Human_Guilt-by-association/"
-setwd(data_dir)
+source("heatmap.3-split.R")
+source("heatmap.3-kmeans_wrapper.R")
 
-ensg_ref = parse_gtf("gencode.v25.annotation_geneonly.gff", rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
+ensg_ref_file = "example_data/gencode.v25.annotation_geneonly.gff"
+#count table should have 1st column as gene_id, which should all be present in ensg_ref_file
+
+mRNA_file = "example_data/DESeq2_hMSC_normalized_counts_mRNA_v25.txt"
+linc_file = "example_data/DESeq2_hMSC_normalized_counts_lncRNA_v25.txt"
+start_dir = getwd()
+
+if(!exists("ensg_ref")){
+  print(paste("loading ensg_ref from:", ensg_ref_file))
+  ensg_ref = parse_gtf(ensg_ref_file, rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
+}else{
+  warning("using previously loaded ensg_ref.")
+}
 genetype = ensg_ref[, c("gene_name", "gene_type")]
 ensg2sym = as.character(genetype[,1])
 names(ensg2sym) = rownames(genetype)
-norm_mRNA = read.table("DESeq2_hMSC_normalized_counts_mRNA_v25.txt")
-norm_lincs = read.table("DESeq2_hMSC_normalized_counts_lncRNA_v25.txt")
+norm_mRNA = read.table(mRNA_file)
+norm_lincs = read.table(linc_file)
+#remove sense intronic lincs
 is_sense_intronic = genetype[rownames(norm_lincs),]$gene_type == "sense_intronic"
 norm_lincs = norm_lincs[!is_sense_intronic,]
+#filter down to columns that contain count data
 is_num = grepl("day", colnames(norm_mRNA))
+#correlate lincs to mRNA after log scaling
 cors = cor(t(log10(norm_lincs[,is_num]+1)), t(log10(norm_mRNA[,is_num]+1)))#columns are protein_coding, rows are lincs
-library(gplots)
-source("H:/R_workspace/jrb_R_scripts/heatmap.3-split.R")
-source("H:/R_workspace/jrb_R_scripts/heatmap.3-kmeans_wrapper.R")
 
-png("cor_hmaps1.png", width = 2400, height = 2400)
-hmap_res = heatmap.3_kmeans_wrapper(t(cors), nclust = 50, skip_plot = F)
-dev.off()
 
-png("cor_hmaps2.png", width = 2400, height = 2400)
-hmap_res2 = heatmap.3_kmeans_wrapper(t(hmap_res[[3]]), nclust = 60, skip_plot = F)
+# png("cor_hmaps1.png", width = 2400, height = 2400)
+hmap_res = heatmap.3_kmeans_wrapper(t(cors), nclust = 50, skip_plot = T)
+# dev.off()
+
+png("mRNA_to_linc_correlation_heatmap.png", width = 2400, height = 2400)
+hmap_res2 = heatmap.3_kmeans_wrapper(t(hmap_res$dat), nclust = 60, skip_plot = F)
 dev.off()
 
 res2clust_infor = function(res){
-  sizes = res[[1]]
+  sizes = res$clust_sizes
   ends = cumsum(sizes)
   starts = c(1, ends[-length(ends)]+1)
   return(list(sizes = sizes, starts = starts, ends = ends))
 }
 
-as_plotted = hmap_res2[[3]]
+as_plotted = hmap_res2$dat
 #plot profiles
 col_clust = res2clust_infor(hmap_res)
 row_clust = res2clust_infor(hmap_res2)
 
+pb <- txtProgressBar(min = 0, max = sum(col_clust$sizes) * sum(row_clust$sizes), style = 3)
 sum_mat = t(sapply(1:length(col_clust$sizes), function(x){
   sapply(1:length(row_clust$sizes), function(y){
-    print(paste(x,y))
+    # print(paste(x,y))
     x_start = col_clust$starts[x]
     x_end = col_clust$ends[x]
     y_start = row_clust$starts[y]

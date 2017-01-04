@@ -1,69 +1,96 @@
-#for input linc, return mRNA within certain distance, 
-#check if mRNA are DE and also if their expression correlates with that of the linc.
-if(exists("script_dir")) setwd(script_dir)
-script_dir = getwd()
-data_dir = "Z:/Coralee/From_Joe/Human_Guilt-by-association/"
-setwd(data_dir)
 
-source("features_within_dist.R")
-source("n_closest_features.R")
-source("parse_gtf.R")
-source('fetch_ucsc_image.R')
+source("par")
 
-
-#load reference with gene features that covers mRNA and lncRNA - make sure versions match!
-ensg_ref = parse_gtf("gencode.v25.annotation_geneonly.gff", rownames_attrib = "gene_id", feature_type = "gene")
-
-#lncRNA DE result files
-linc_DE_files = dir(pattern = "_Significant_lncRNAs_v25.txt", full.names = T)
-all_DE_lincs = character()
-for(f in linc_DE_files){
-  res = rownames(read.table(f))
-  all_DE_lincs = union(all_DE_lincs, res)
-}
-
-#mRNA DE result files
-mRNA_DE_files = dir(pattern = "_Significant_mRNAs_v25.txt", full.names = T)
-all_DE_mRNA = character()
-for(f in mRNA_DE_files){
-  res = rownames(read.table(f))
-  all_DE_mRNA = union(all_DE_mRNA, res)
+load_correlation_cis_regulatory = function(data_dir, ref_file, lnc_de_pattern, mrna_de_pattern){
+  # setwd(data_dir)
+  #load reference with gene features that covers mRNA and lncRNA - make sure versions match!
+  ensg_ref <<- parse_gtf(ref_file, rownames_attrib = "gene_id", feature_type = "gene")
+  
+  #lncRNA DE result files
+  linc_DE_files = dir(pattern = lnc_de_pattern, full.names = T)
+  all_DE_lincs = character()
+  for(f in linc_DE_files){
+    res = rownames(read.table(f))
+    all_DE_lincs = union(all_DE_lincs, res)
+  }
+  all_DE_lincs <<- all_DE_lincs
+  
+  #mRNA DE result files
+  mRNA_DE_files = dir(pattern = mrna_de_pattern, full.names = T)
+  all_DE_mRNA = character()
+  for(f in mRNA_DE_files){
+    res = rownames(read.table(f))
+    all_DE_mRNA = union(all_DE_mRNA, res)
+  }
+  all_DE_mRNA <<- all_DE_mRNA
+  
+  #this file must contain counts for all mRNA and lncs in DE results
+  norm_counts <<- read.table(COUNTS_FILE)
 }
 
 #find mRNA nearby DE lincs
-mRNA_nearby = n_closest_features(test_res = all_DE_lincs, ref_dict = ensg_ref, n_closest = 4, strand = "either")
+#source("Z://Coralee/scripts/guilt-by-assoication-and-correlation/n_closest_features.R")
+n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5, strandedness = c("either", "same", "opposite")[1]){
+  #test_res must be array of gene_id or whatever ref_dict uses as rownames or GenomicRanges
+  #convert to GRanges
+  ref_dict$seqnames = ref_dict$chrm
+  ref_gr = GRanges(ref_dict)
+  if(class(test_res) == "character"){
+    test_res = ref_gr[test_res,]
+  }
+  if(class(test_res) != "GRanges"){
+    stop(paste("test_res must be character array of rownames of ref_dict or a GRanges object. was", class(test_res)))
+  }
+  # setTxtProgressBar(pb, i)
+  n_nearest = pblapply(test_res, function(x){
+    chrm_gr = GRanges(merge(data.frame(seqnames = seqnames(x)), ref_gr, by = "seqnames"))
+    keep = chrm_gr$gene_name != x$gene_name
+    chrm_gr = chrm_gr[keep]
+    if(strandedness == "opposite"){
+      if(as.data.frame(x)$strand == "+"){
+        strand(x) = "-"
+      }else if(as.data.frame(x)$strand == "-"){
+        strand(x) = "+"
+      }
+    }
+    d = distance(x, chrm_gr, ignore.strand = strandedness == "either")
+    chrm_gr$distance = d
+    o = order(d, decreasing = F, na.last = T)
+    chrm_gr = chrm_gr[o][1:n_closest]
+    keep = chrm_gr$distance <= max_distance
+    chrm_gr = chrm_gr[keep]
+    chrm_gr$gene_id
+  })
+  n_nearest
+}
 
-#filter nearby mRNA by whether they are DE
-mRNA_nearby_DE = lapply(mRNA_nearby, function(x){
-  intersect(x, all_DE_mRNA)
-})
-is_DE = sapply(mRNA_nearby_DE, length) > 0
-n_pos = sum(is_DE)
-perc_pos = round((n_pos / length(all_DE_lincs)) * 100, 2)
-print(paste0(perc_pos, "% of DE lincs near DE mRNA"))
+#each array in list_to_filter is interesected with filter_to_apply
+filter_lists = function(list_to_filter, filter_to_apply){
+  filtered_list = lapply(list_to_filter, function(x){
+    intersect(x, filter_to_apply)
+  })
+  return(filtered_list)
+}
 
-#this file must contain counts for all mRNA and lncs in DE results
-norm_counts = read.table("DESeq2_hMSC_normalized_counts_v25.txt")
+correlate_nearby = function(){
+  mRNA_nearby_corr = lapply(names(mRNA_nearby_DE)[is_DE], function(x){
+    mRNA = mRNA_nearby_DE[[x]]
+    dat = norm_counts[c(x, mRNA),]
+    dat_cor = cor(t(dat))[1,-1]
+    names(dat_cor) = mRNA
+    return(dat_cor)
+  })
+  names(mRNA_nearby_corr) = names(mRNA_nearby_DE)[is_DE]
+  return(mRNA_nearby_corr)
+}
 
-mRNA_nearby_corr = lapply(names(mRNA_nearby_DE)[is_DE], function(x){
-  mRNA = mRNA_nearby_DE[[x]]
-  dat = norm_counts[c(x, mRNA),]
-  dat_cor = cor(t(dat))[1,-1]
-  names(dat_cor) = mRNA
-  return(dat_cor)
-})
-names(mRNA_nearby_corr) = names(mRNA_nearby_DE)[is_DE]
-
-
-
-
-plot_all_nearby = function(DE_lists){
+plot_nearby = function(DE_lists){
   MAX = max(sapply(DE_lists, length)) + 1
   l_mat = matrix(c(rep(1, MAX), 1:MAX + 1), ncol = MAX, byrow = T)
   l_hei = c(1,3)
   n = 1
-  mRNA_nearby_plots = lapply(names(DE_lists), function(name){
-    print(n / length(DE_lists)); n <<- n + 1
+  mRNA_nearby_plots = pblapply(names(DE_lists), function(name){
+    # print(n / length(DE_lists)); n <<- n + 1
     layout(l_mat, heights = l_hei)
     mRNA = DE_lists[[name]]
     mRNA_o = order(mRNA_nearby_corr[[name]][mRNA], decreasing = T)
@@ -128,19 +155,5 @@ plot_all_nearby = function(DE_lists){
   })
 }
 
-DE_mRNA_nearby_DE = mRNA_nearby_DE[is_DE]
 
-pdf("DE_lincs_with_DE_mRNA_full.human.V25.pdf", width = 2.5 * 4, height = 2.5 * 4 / 3)
-o = order(sapply(mRNA_nearby_corr, function(x)max(abs(x))), decreasing = T)
-plot_all_nearby(DE_mRNA_nearby_DE[o])
-dev.off()
 
-pdf("DE_lincs_with_DE_mRNA_top20.human.V25.pdf", width = 2.5 * 4, height = 2.5 * 4 / 3)
-o = order(sapply(mRNA_nearby_corr, function(x)max((x))), decreasing = T)
-plot_all_nearby(DE_mRNA_nearby_DE[o][1:20])
-dev.off()
-
-pdf("DE_lincs_with_DE_mRNA_bottom20.human.V25.pdf", width = 2.5 * 4, height = 2.5 * 4 / 3)
-o = order(sapply(mRNA_nearby_corr, function(x)min((x))), decreasing = F)
-plot_all_nearby(DE_mRNA_nearby_DE[o][1:20])
-dev.off()
