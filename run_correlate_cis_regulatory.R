@@ -11,10 +11,9 @@ source('fetch_ucsc_image.R')
 source("functions_correlate_cis_regulatory.R")
 
 setwd(data_dir)
-load_correlation_cis_regulatory( 
-                                ref_file = REF_FILE, 
-                                lnc_de_pattern = LNC_DE_PATTERN, 
-                                mrna_de_pattern = MRNA_DE_PATTERN)
+setup_correlation_cis_regulatory(ref_file = REF_FILE, 
+                                 lnc_de_pattern = LNC_DE_PATTERN, 
+                                 mrna_de_pattern = MRNA_DE_PATTERN)
 
 mRNA_nearby = n_closest_features(test_res = all_DE_lincs, 
                                  ref_dict = ensg_ref, 

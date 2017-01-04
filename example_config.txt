@@ -1,17 +1,39 @@
-#a gff file containing fields for gene_id, gene_name, and gene_type
-#ref_file=example_data/gencode.v25.annotation_geneonly.gff
-#counts of mRNA and lncRNA, column names should match and rownames should be ensembl gene_id
-#mRNA_file=example_data/DESeq2_hMSC_normalized_counts_mRNA_v25.txt
-#linc_file=example_data/DESeq2_hMSC_normalized_counts_lncRNA_v25.txt
-COUNTS_FILE=DESeq2_hMSC_normalized_counts_v25.txt
-#
-LNC_DE_PATTERN=_Significant_lncRNAs_v25.txt
-MRNA_DE_PATTERN=_Significant_mRNAs_v25.txt
-#
-REF_FILE=gencode.v25.annotation_geneonly.gff
-#
+#directories controlling where data is loaded from and where output is sent
+#relative path are relative to MAIN_DIR
 MAIN_DIR=H:/projects/Coralee/regulation_and_correlation_public
 SCRIPT_DIR=H:/projects/Coralee/regulation_and_correlation_public
 DATA_DIR=example_data
 OUTPUT_DIR=example_output
-MAX_DIST=10^5
+#
+#the max distance considered "near"
+MAX_DIST=100000
+#
+#number of clusters in heatmaps
+LNC_NCLUST=50
+MRNA_NCLUST=60
+#
+#seed value set by kmeans - useful if you hit a clustering initialization error
+KMEAN_SEED=1
+#
+#in case you're crazy and don't use underscores to deliminate column name fieds
+COLNAME_SEP=_
+#the index of the column name field that identifies sample groups to pool by
+POOL_BY=3
+#
+#every column name of the actual numeric data should have this string
+NUMERIC_COLUMN_PATTERN=day
+#
+#a gff file containing fields for gene_id, gene_name, and gene_type - in DATA_DIR or absolute path
+REF_FILE=gencode.v25.annotation_geneonly.gff
+#
+#counts of mRNA and lncRNA, - in DATA_DIR or absolute path
+#column names should match and rownames should be ensembl gene_id 
+MRNA_COUNT_FILE=DESeq2_hMSC_normalized_counts_mRNA_v25.txt
+LNC_COUNT_FILE=DESeq2_hMSC_normalized_counts_lncRNA_v25.txt
+COUNTS_FILE=DESeq2_hMSC_normalized_counts_v25.txt
+#
+#patterns matched by different sets of DESEQ result files - must be in DATA_DIR
+LNC_DE_PATTERN=_Significant_lncRNAs_v25.txt
+MRNA_DE_PATTERN=_Significant_mRNAs_v25.txt
+
+

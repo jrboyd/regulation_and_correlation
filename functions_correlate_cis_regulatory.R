@@ -1,11 +1,12 @@
-
-source("par")
-
-load_correlation_cis_regulatory = function(data_dir, ref_file, lnc_de_pattern, mrna_de_pattern){
+setup_correlation_cis_regulatory = function(ref_file, lnc_de_pattern, mrna_de_pattern){
   # setwd(data_dir)
   #load reference with gene features that covers mRNA and lncRNA - make sure versions match!
-  ensg_ref <<- parse_gtf(ref_file, rownames_attrib = "gene_id", feature_type = "gene")
-  
+  if(!exists("ensg_ref")){
+    print(paste("loading ensg_ref from:", ensg_ref_file))
+    ensg_ref = parse_gtf(ensg_ref_file, rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
+  }else{
+    warning("using previously loaded ensg_ref.")
+  }
   #lncRNA DE result files
   linc_DE_files = dir(pattern = lnc_de_pattern, full.names = T)
   all_DE_lincs = character()
@@ -13,8 +14,6 @@ load_correlation_cis_regulatory = function(data_dir, ref_file, lnc_de_pattern, m
     res = rownames(read.table(f))
     all_DE_lincs = union(all_DE_lincs, res)
   }
-  all_DE_lincs <<- all_DE_lincs
-  
   #mRNA DE result files
   mRNA_DE_files = dir(pattern = mrna_de_pattern, full.names = T)
   all_DE_mRNA = character()
@@ -22,8 +21,10 @@ load_correlation_cis_regulatory = function(data_dir, ref_file, lnc_de_pattern, m
     res = rownames(read.table(f))
     all_DE_mRNA = union(all_DE_mRNA, res)
   }
-  all_DE_mRNA <<- all_DE_mRNA
   
+  ensg_ref <<- ensg_ref
+  all_DE_lincs <<- all_DE_lincs
+  all_DE_mRNA <<- all_DE_mRNA
   #this file must contain counts for all mRNA and lncs in DE results
   norm_counts <<- read.table(COUNTS_FILE)
 }

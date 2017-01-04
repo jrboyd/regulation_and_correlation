@@ -75,7 +75,7 @@ heatmap.3_kmeans_wrapper = function(dat, nclust = 4, col = c("blue", 'white', 'r
   if(!skip_plot){
     override_o = cbind(1:nclust, clust_sizes)
     res = heatmap.3(plot_dat, trace = 'n', Rowv = F, Colv = F, scale = 'n',  cexCol = 1.6, cexRow = .4, col = colors, density.info = 'n', key.title = "", labRow = "", override_o = override_o, ...)
-    
+    res = res[1:3]
     if(!is.null(xlsxname)){
       if(is.null(rownames(plot_dat))){
         rownames(plot_dat) = paste0("row_", 1:nrow(plot_dat))
@@ -111,7 +111,7 @@ heatmap.3_kmeans_wrapper = function(dat, nclust = 4, col = c("blue", 'white', 'r
     res = list(clust_sizes, 1:nrow(plot_dat), plot_dat)
   }
   res = res[1:3]
-  names(res) = c(clust_sizes, o, dat)
+  names(res) = c("clust_sizes", "o", "dat")
   return(res)
 }
 

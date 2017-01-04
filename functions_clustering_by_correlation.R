@@ -1,78 +1,107 @@
-source("parse_gtf.R")
-source("heatmap.3-split.R")
-source("heatmap.3-kmeans_wrapper.R")
 
-ensg_ref_file = "example_data/gencode.v25.annotation_geneonly.gff"
-#count table should have 1st column as gene_id, which should all be present in ensg_ref_file
 
-mRNA_file = "example_data/DESeq2_hMSC_normalized_counts_mRNA_v25.txt"
-linc_file = "example_data/DESeq2_hMSC_normalized_counts_lncRNA_v25.txt"
-start_dir = getwd()
-
-if(!exists("ensg_ref")){
-  print(paste("loading ensg_ref from:", ensg_ref_file))
-  ensg_ref = parse_gtf(ensg_ref_file, rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
-}else{
-  warning("using previously loaded ensg_ref.")
+#sets a series of global values after loading data
+setup_clustering_by_correlation = function(ref_file, mRNA_counts_file, linc_counts_file){
+  if(!exists("ensg_ref")){
+    print(paste("loading ensg_ref from:", ref_file))
+    ensg_ref = parse_gtf(ref_file, rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
+  }else{
+    warning("using previously loaded ensg_ref.")
+  }
+  genetype = ensg_ref[, c("gene_name", "gene_type")]
+  ensg2sym = as.character(genetype[,1])
+  names(ensg2sym) = rownames(genetype)
+  norm_mRNA = read.table(mRNA_counts_file)
+  norm_lincs = read.table(linc_counts_file)
+  #remove sense intronic lincs
+  is_sense_intronic = genetype[rownames(norm_lincs),]$gene_type == "sense_intronic"
+  norm_lincs = norm_lincs[!is_sense_intronic,]
+  
+  #filter down to columns that contain count data
+  is_num = grepl(NUMERIC_COLUMN_PATTERN, colnames(norm_mRNA))
+  #correlate lincs to mRNA after log scaling
+  cors = cor(t(log10(norm_lincs[,is_num]+1)), t(log10(norm_mRNA[,is_num]+1)))#columns are protein_coding, rows are lincs
+  
+  #aggregate reps
+  agg = function(to_agg){
+    is_num = grepl(NUMERIC_COLUMN_PATTERN, colnames(to_agg))
+    to_agg = to_agg[, is_num]
+    col_ids = sapply(strsplit(colnames(to_agg), COLNAME_SEP), function(x)x[POOL_BY])
+    done_agg = matrix(0, nrow = nrow(to_agg), ncol = length(unique(col_ids)))
+    rownames(done_agg) = rownames(to_agg)
+    colnames(done_agg) = unique(col_ids)
+    for(id in unique(col_ids)){
+      k = col_ids == id
+      done_agg[, id] = rowMeans(to_agg[,k])
+    }
+    return(done_agg)
+  }
+  
+  agg_mRNA = agg(norm_mRNA)
+  agg_linc = agg(norm_lincs)
+  
+  ensg_ref <<- ensg_ref
+  ensg2sym <<- ensg2sym
+  norm_mRNA <<- norm_mRNA
+  norm_lincs <<- norm_lincs
+  cors <<- cors
+  agg_mRNA <<- agg_mRNA
+  agg_linc <<- agg_linc
 }
-genetype = ensg_ref[, c("gene_name", "gene_type")]
-ensg2sym = as.character(genetype[,1])
-names(ensg2sym) = rownames(genetype)
-norm_mRNA = read.table(mRNA_file)
-norm_lincs = read.table(linc_file)
-#remove sense intronic lincs
-is_sense_intronic = genetype[rownames(norm_lincs),]$gene_type == "sense_intronic"
-norm_lincs = norm_lincs[!is_sense_intronic,]
-#filter down to columns that contain count data
-is_num = grepl("day", colnames(norm_mRNA))
-#correlate lincs to mRNA after log scaling
-cors = cor(t(log10(norm_lincs[,is_num]+1)), t(log10(norm_mRNA[,is_num]+1)))#columns are protein_coding, rows are lincs
 
-
-# png("cor_hmaps1.png", width = 2400, height = 2400)
-hmap_res = heatmap.3_kmeans_wrapper(t(cors), nclust = 50, skip_plot = T)
-# dev.off()
-
-png("mRNA_to_linc_correlation_heatmap.png", width = 2400, height = 2400)
-hmap_res2 = heatmap.3_kmeans_wrapper(t(hmap_res$dat), nclust = 60, skip_plot = F)
-dev.off()
-
-res2clust_infor = function(res){
-  sizes = res$clust_sizes
-  ends = cumsum(sizes)
-  starts = c(1, ends[-length(ends)]+1)
-  return(list(sizes = sizes, starts = starts, ends = ends))
+plot_2d_kmeans = function(hmap_data, nclust1, nclust2, kmean_seed = 1){
+  # png("cor_hmaps1.png", width = 2400, height = 2400)
+  print("clustering lncs...")
+  hmap_res = heatmap.3_kmeans_wrapper(t(hmap_data), nclust = nclust1, skip_plot = T, seed = kmean_seed)
+  # dev.off()
+  print("clustering mrnas...")
+  setwd(output_dir)
+  png("mRNA_to_linc_correlation_heatmap.png", width = 2400, height = 2400)
+  setwd(MAIN_DIR)
+  hmap_res2 = heatmap.3_kmeans_wrapper(t(hmap_res$dat), nclust = nclust2, skip_plot = F, seed = kmean_seed)
+  dev.off()
+  print("done!")
+  as_plotted = hmap_res2$dat
+  #plot profiles
+  hmap_res2clust_infor = function(res){
+    sizes = res$clust_sizes
+    ends = cumsum(sizes)
+    starts = c(1, ends[-length(ends)]+1)
+    return(list(sizes = sizes, starts = starts, ends = ends))
+  }
+  col_clust = hmap_res2clust_infor(hmap_res)
+  row_clust = hmap_res2clust_infor(hmap_res2)
+  return(list(col_clust = col_clust, row_clust = row_clust, as_plotted = as_plotted))
 }
 
-as_plotted = hmap_res2$dat
-#plot profiles
-col_clust = res2clust_infor(hmap_res)
-row_clust = res2clust_infor(hmap_res2)
-
-pb <- txtProgressBar(min = 0, max = sum(col_clust$sizes) * sum(row_clust$sizes), style = 3)
-sum_mat = t(sapply(1:length(col_clust$sizes), function(x){
-  sapply(1:length(row_clust$sizes), function(y){
-    # print(paste(x,y))
-    x_start = col_clust$starts[x]
-    x_end = col_clust$ends[x]
-    y_start = row_clust$starts[y]
-    y_end = row_clust$ends[y]
-    ensg_lincs = rownames(as_plotted)[y_start:y_end]
-    ensg_mRNA = colnames(as_plotted)[x_start:x_end]
-    return(mean(as_plotted[ensg_lincs, ensg_mRNA]))
-  })
-}))
-colors = rgb(colorRamp(c("darkblue", "white", "darkred"))(0:21/21)/255)
-pdf("avg correlation between clusters.pdf")
-heatmap.2(sum_mat, Colv = F, Rowv = F, trace = "n", col = colors, 
-          srtRow = 90, labRow = c(rep("", 33), "lincRNA clusters"), 
-          srtCol = 0, labCol = c(rep("", 33), "mRNA clusters"), 
-          main = "Average correlation between clusters")
-dev.off()
+plot_summary_heatmap = function(as_plotted, col_clust, row_clust){
+  # pb <- txtProgressBar(min = 0, max = sum(col_clust$sizes) * sum(row_clust$sizes), style = 3)
+  sum_mat = t(pbsapply(1:length(col_clust$sizes), function(x){
+    sapply(1:length(row_clust$sizes), function(y){
+      # print(paste(x,y))
+      x_start = col_clust$starts[x]
+      x_end = col_clust$ends[x]
+      y_start = row_clust$starts[y]
+      y_end = row_clust$ends[y]
+      ensg_lincs = rownames(as_plotted)[y_start:y_end]
+      ensg_mRNA = colnames(as_plotted)[x_start:x_end]
+      return(mean(as_plotted[ensg_lincs, ensg_mRNA]))
+    })
+  }))
+  colors = rgb(colorRamp(c("darkblue", "white", "darkred"))(0:21/21)/255)
+  # setwd(output_dir)
+  pdf("avg correlation between clusters.pdf")
+  heatmap.2(sum_mat, Colv = F, Rowv = F, trace = "n", col = colors, dendrogram = "n",
+            srtRow = 90, labRow = c(rep("", 33), "lincRNA clusters"), 
+            srtCol = 0, labCol = c(rep("", 33), "mRNA clusters"), 
+            main = "Average correlation between clusters")
+  dev.off()
+  # setwd(MAIN_DIR)
+}
 
 pos_corr = list()
 neg_corr = list()
-sum_mat = t(sapply(1:length(col_clust$sizes), function(x){
+sum_mat = t(pbsapply(1:length(col_clust$sizes), function(x){
   sapply(1:length(row_clust$sizes), function(y){
     x_start = col_clust$starts[x]
     x_end = col_clust$ends[x]
@@ -91,14 +120,7 @@ sum_mat = t(sapply(1:length(col_clust$sizes), function(x){
 }))
 
 
-agg_mRNA = t(apply(norm_mRNA[,is_num], 1, function(x){
-  x = c(mean(x[1:3]), mean(x[4:6]), mean(x[7:9]), mean(x[10:12]))
-  return(log2(x + 8)-3)
-})); colnames(agg_mRNA) = paste("day", 0:3*7)
-agg_linc = t(apply(norm_lincs[,is_num], 1, function(x){
-  x = c(mean(x[1:3]), mean(x[4:6]), mean(x[7:9]), mean(x[10:12]))
-  return(log2(x + 8)-3)
-})); colnames(agg_linc) = paste("day", 0:3*7)
+
 
 
 plot_corr_blocks = function(corr_list, pdf_name){

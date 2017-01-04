@@ -238,11 +238,11 @@ heatmap.3 <- function (x,
   if(!is.na(override_o)){
     classCount = nrow(override_o)
   }
-  print(classCount)
+  # print(classCount)
   colorClasses = brewer.pal(n = min(classCount,maxColors),name = "Dark2")
   if(classCount > maxColors){
     key = (0:(classCount-1)) %% maxColors + 1
-    print(key)
+    # print(key)
     colorClasses = colorClasses[key]
   }
   if(length(override_o) == 1 && is.na(override_o)){
@@ -757,7 +757,7 @@ heatmap.3 <- function (x,
   
   revx=t(x)
   revx=revx[rev(1:nrow(revx)),]
-  print(o)
+  # print(o)
   #jrb draw line plots
   fetchClass=function(n){
     # data: original data
@@ -1158,11 +1158,11 @@ textplot.character <- function (object,
 
 write.HeatmapLists = function(heatmap3_output, name = "heatmap_lists", output_directory = ""){
   res = heatmap3_output
-  print(output_directory)
+  # print(output_directory)
   if(!file.exists(output_directory))
     dir.create(output_directory)
   root = paste(output_directory, name, sep = "/")
-  print(root)
+  # print(root)
   classSizes = res[[1]]
   asPlotted = res[[3]]
   classColors = res[[4]]
@@ -1228,8 +1228,8 @@ plot.HeatmapLists = function(heatmap3_output){
   for(i in 1:(ncol(a)/6)){
     start = (i - 1) * 6 + 1
     end = i * 6
-    print(start)
-    print(end)
+    # print(start)
+    # print(end)
     textplot(b[,start:end], col.data = a[,start:end], show.rownames = F, show.colnames = F, halign = "left", hadj = 0, cex = .5)
   }
 }
