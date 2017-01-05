@@ -1,0 +1,9 @@
+#should install all possibly needed packages
+install.packages("RCurl")
+install.packages("httr")
+install.packages("png")
+install.packages("pbapply")
+install.packages("gplots")
+install.packages("gtools")
+source("https://bioconductor.org/biocLite.R")
+biocLite("GenomicRanges")
