@@ -1,4 +1,8 @@
 # regulation_and_correlation
+run install_packages.R is you're missing libraries.
+minor edits to main.R and a copied version of example_config.txt should be sufficient for most uses.
+everything runs via main.R but should also be somewhat modular.
+
 The purpose of this project is to relate long non-coding (lnc) RNAs to mRNA in two different ways.
 1) run_clustering_by_correlation.R - calculates a correlation coefficient for each lnc to each mRNA and then performs kmeans clustering in both dimensions.  
     Clusters with the highest correlation are then reported.

@@ -1,3 +1,15 @@
+#this script sets the configuration to use and loads it.
+#loads helper functions and executes pipelines.
+
+#run install packages if you're missing libraries
+library("RCurl")
+library("httr")
+library("png")
+library("pbapply")
+library("gplots")
+library("gtools")
+library("GenomicRanges")
+
 CFG_FILE = "example_config.txt"
 if(exists("MAIN_DIR")) setwd(MAIN_DIR)
 source("parse_config.R")
@@ -19,8 +31,7 @@ parse_config(CFG_FILE)
 
 #for input linc, return mRNA within certain distance, 
 #check if mRNA are DE and also if their expression correlates with that of the linc.
-library(GenomicRanges)
-library(pbapply)
+
 
 #load functions
 setwd(script_dir)
@@ -35,3 +46,4 @@ source("functions_clustering_by_correlation.R")
 source("run_clustering_by_correlation.R")
 setwd(MAIN_DIR)
 source("run_correlate_cis_regulatory.R")
+setwd(MAIN_DIR)
