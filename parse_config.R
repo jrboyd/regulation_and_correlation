@@ -16,7 +16,10 @@ parse_config = function(config_file = "example_config.txt"){
     # print(val)
     assign(cfg[i,1], val, envir = .GlobalEnv)
   }
-  
+  if(MAIN_DIR == "") MAIN_DIR = getwd()
+  if(SCRIPT_DIR == "") SCRIPT_DIR = MAIN_DIR
+  MAIN_DIR = normalizePath(MAIN_DIR)
+  SCRIPT_DIR = normalizePath(SCRIPT_DIR)
   setwd(MAIN_DIR)
   script_dir <<- normalizePath(SCRIPT_DIR)
   dir.create(OUTPUT_DIR, showWarnings = F)
