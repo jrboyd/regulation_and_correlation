@@ -1,5 +1,8 @@
 #should install all possibly needed packages
-chooseCRANmirror()
+local({r <- getOption("repos")
+r["CRAN"] <- "http://cran.r-project.org" 
+options(repos=r)
+})
 install.packages("RCurl")
 install.packages("httr")
 install.packages("png")
