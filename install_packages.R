@@ -1,4 +1,5 @@
 #should install all possibly needed packages
+chooseCRANmirror()
 install.packages("RCurl")
 install.packages("httr")
 install.packages("png")
