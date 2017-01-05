@@ -6,3 +6,7 @@ regulation_correlation_public.Rproj
 Thumbs.db
 *.png
 example_output/*
+*.pdf
+example_data
+example_data.bu
+example_data.tar.gz

@@ -7,8 +7,8 @@ library(png)
 #base_url - tells UCSC what to display and how it should appear.  default is for hg38.
 fetch_ucsc_image = function(chrm, start, end, base_url = NULL){
   if(is.null(base_url)){
-    warning("Using default UCSC URL.  Only appropriate for hg38 and might not work at all.")
-    warning("To make your own URL, select the appropriate genome and desired display settings in UCSC genome browser. Append everything after 'hgsid=' to the following URL:\nhttp://genome.ucsc.edu/cgi-bin/hgRenderTracks?position=CHR:START-END&pubs=pack%27&refGene=pack%27&hgsid=")
+    # warning("Using default UCSC URL.  Only appropriate for hg38 and might not work at all.")
+    # warning("To make your own URL, select the appropriate genome and desired display settings in UCSC genome browser. Append everything after 'hgsid=' to the following URL:\nhttp://genome.ucsc.edu/cgi-bin/hgRenderTracks?position=CHR:START-END&pubs=pack%27&refGene=pack%27&hgsid=")
     base_url = "http://genome.ucsc.edu/cgi-bin/hgRenderTracks?position=CHR:START-END&pubs=pack%27&refGene=pack%27&hgsid="
   }  
   sym_url = base_url

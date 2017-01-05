@@ -1,11 +1,3 @@
-if(exists("MAIN_DIR")) setwd(MAIN_DIR)
-source("parse_config.R")
-parse_config("example_config.txt")
-
-setwd(script_dir)
-source("parse_gtf.R")
-source("heatmap.3-split.R")
-source("heatmap.3-kmeans_wrapper.R")
 
 setwd(data_dir)
 setup_clustering_by_correlation(ref_file = REF_FILE, 
@@ -26,4 +18,27 @@ if(file.exists(cluster_file)){
   save(cluster_info, file = cluster_file)
 }
 
-plot_summary_heatmap(as_plotted = cluster_info$as_plotted, col_clust = cluster_info$col_clust, row_clust = cluster_info$row_clust)
+plot_summary_heatmap(as_plotted = cluster_info$as_plotted, 
+                     col_clust = cluster_info$col_clust, 
+                     row_clust = cluster_info$row_clust)
+
+corrs = get_correlated_genes(as_plotted = cluster_info$as_plotted, 
+                             col_clust = cluster_info$col_clust, 
+                             row_clust = cluster_info$row_clust,
+                             min_correlation = .7)
+
+plot_corr_blocks(as_plotted = cluster_info$as_plotted, 
+                 sum_mat = corrs$summary, 
+                 corr_list = corrs$pos, 
+                 pdf_name = "positively_corr_plots.pdf")
+plot_corr_blocks(as_plotted = cluster_info$as_plotted, 
+                 sum_mat = corrs$summary, 
+                 corr_list = corrs$neg, 
+                 pdf_name = "negatively_corr_plots.pdf")
+
+write_corr_lists(as_plotted = cluster_info$as_plotted,
+                 corr_list = corrs$pos, 
+                 xlsx_name = "positively_corr_lists.xlsx")
+write_corr_lists(as_plotted = cluster_info$as_plotted,
+                 corr_list = corrs$neg, 
+                 xlsx_name = "negatively_corr_lists.xlsx")

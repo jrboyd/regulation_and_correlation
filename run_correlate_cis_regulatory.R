@@ -1,14 +1,5 @@
-source("parse_config.R")
-parse_config()
 #for input linc, return mRNA within certain distance, 
 #check if mRNA are DE and also if their expression correlates with that of the linc.
-library(GenomicRanges)
-library(pbapply)
-
-setwd(script_dir)
-source("parse_gtf.R")
-source('fetch_ucsc_image.R')
-source("functions_correlate_cis_regulatory.R")
 
 setwd(data_dir)
 setup_correlation_cis_regulatory(ref_file = REF_FILE, 

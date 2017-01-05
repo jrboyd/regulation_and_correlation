@@ -20,7 +20,7 @@ setup_clustering_by_correlation = function(ref_file, mRNA_counts_file, linc_coun
   #filter down to columns that contain count data
   is_num = grepl(NUMERIC_COLUMN_PATTERN, colnames(norm_mRNA))
   #correlate lincs to mRNA after log scaling
-  cors = cor(t(log10(norm_lincs[,is_num]+1)), t(log10(norm_mRNA[,is_num]+1)))#columns are protein_coding, rows are lincs
+  cors = cor(t(log10(norm_lincs[,is_num]+1)), t(log10(norm_mRNA[,is_num]+1)), method = "spearman")#columns are protein_coding, rows are lincs
   
   #aggregate reps
   agg = function(to_agg){
@@ -37,8 +37,8 @@ setup_clustering_by_correlation = function(ref_file, mRNA_counts_file, linc_coun
     return(done_agg)
   }
   
-  agg_mRNA = agg(norm_mRNA)
-  agg_linc = agg(norm_lincs)
+  agg_mRNA = log2(agg(norm_mRNA) + 1)
+  agg_linc = log2(agg(norm_lincs) + 1)
   
   ensg_ref <<- ensg_ref
   ensg2sym <<- ensg2sym
@@ -55,9 +55,7 @@ plot_2d_kmeans = function(hmap_data, nclust1, nclust2, kmean_seed = 1){
   hmap_res = heatmap.3_kmeans_wrapper(t(hmap_data), nclust = nclust1, skip_plot = T, seed = kmean_seed)
   # dev.off()
   print("clustering mrnas...")
-  setwd(output_dir)
   png("mRNA_to_linc_correlation_heatmap.png", width = 2400, height = 2400)
-  setwd(MAIN_DIR)
   hmap_res2 = heatmap.3_kmeans_wrapper(t(hmap_res$dat), nclust = nclust2, skip_plot = F, seed = kmean_seed)
   dev.off()
   print("done!")
@@ -89,41 +87,38 @@ plot_summary_heatmap = function(as_plotted, col_clust, row_clust){
     })
   }))
   colors = rgb(colorRamp(c("darkblue", "white", "darkred"))(0:21/21)/255)
-  # setwd(output_dir)
   pdf("avg correlation between clusters.pdf")
   heatmap.2(sum_mat, Colv = F, Rowv = F, trace = "n", col = colors, dendrogram = "n",
             srtRow = 90, labRow = c(rep("", 33), "lincRNA clusters"), 
             srtCol = 0, labCol = c(rep("", 33), "mRNA clusters"), 
             main = "Average correlation between clusters")
   dev.off()
-  # setwd(MAIN_DIR)
 }
 
-pos_corr = list()
-neg_corr = list()
-sum_mat = t(pbsapply(1:length(col_clust$sizes), function(x){
-  sapply(1:length(row_clust$sizes), function(y){
-    x_start = col_clust$starts[x]
-    x_end = col_clust$ends[x]
-    y_start = row_clust$starts[y]
-    y_end = row_clust$ends[y]
-    ensg_lincs = rownames(as_plotted)[y_start:y_end]
-    ensg_mRNA = colnames(as_plotted)[x_start:x_end]
-    avg = mean(as_plotted[ensg_lincs, ensg_mRNA])
-    if(avg > .7){
-      pos_corr[[paste(y, x, sep = ',')]] <<- list(ensg_mRNA = ensg_mRNA, ensg_lincs = ensg_lincs)
-    }else if(avg < -.7){
-      neg_corr[[paste(y, x, sep = ',')]] <<- list(ensg_mRNA = ensg_mRNA, ensg_lincs = ensg_lincs)
-    }
-    return(mean(as_plotted[ensg_lincs, ensg_mRNA]))
-  })
-}))
+get_correlated_genes = function(as_plotted, col_clust, row_clust, min_correlation = .7){
+  pos_corr = list()
+  neg_corr = list()
+  sum_mat = t(pbsapply(1:length(col_clust$sizes), function(x){
+    sapply(1:length(row_clust$sizes), function(y){
+      x_start = col_clust$starts[x]
+      x_end = col_clust$ends[x]
+      y_start = row_clust$starts[y]
+      y_end = row_clust$ends[y]
+      ensg_lincs = rownames(as_plotted)[y_start:y_end]
+      ensg_mRNA = colnames(as_plotted)[x_start:x_end]
+      avg = mean(as_plotted[ensg_lincs, ensg_mRNA])
+      if(avg > min_correlation){
+        pos_corr[[paste(y, x, sep = ',')]] <<- list(ensg_mRNA = ensg_mRNA, ensg_lincs = ensg_lincs)
+      }else if(avg < -.7){
+        neg_corr[[paste(y, x, sep = ',')]] <<- list(ensg_mRNA = ensg_mRNA, ensg_lincs = ensg_lincs)
+      }
+      return(mean(as_plotted[ensg_lincs, ensg_mRNA]))
+    })
+  }))
+  return(list(pos = pos_corr, neg = pos_corr, summary = sum_mat))
+}
 
-
-
-
-
-plot_corr_blocks = function(corr_list, pdf_name){
+plot_corr_blocks = function(as_plotted, sum_mat, corr_list, pdf_name){
   pdf(pdf_name)
   for(i in 1:length(corr_list)){
     nam = names(corr_list)[i]
@@ -151,10 +146,8 @@ plot_corr_blocks = function(corr_list, pdf_name){
   }
   dev.off()
 }
-plot_corr_blocks(pos_corr, "positively_corr_plots.pdf")
-plot_corr_blocks(neg_corr, "negatively_corr_plots.pdf")
 
-write_corr_lists = function(corr_list, xlsx_name){
+write_corr_lists = function(as_plotted, corr_list, xlsx_name){
   wb = createWorkbook()
   sheet_mRNA_sym = createSheet(wb, "mRNA_sym")
   sheet_mRNA_ensg = createSheet(wb, "mRNA_ensg")
@@ -189,5 +182,4 @@ write_corr_lists = function(corr_list, xlsx_name){
   saveWorkbook(wb, file = xlsx_name)
 }
 
-write_corr_lists(corr_list = pos_corr, xlsx_name = "positively_corr_lists.xlsx")
-write_corr_lists(corr_list = neg_corr, xlsx_name = "negatively_corr_lists.xlsx")
+
