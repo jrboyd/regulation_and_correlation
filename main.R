@@ -8,6 +8,7 @@ library("png")
 library("pbapply")
 library("gplots")
 library("gtools")
+library("xlsx")
 library("GenomicRanges")
 
 CFG_FILE = "example_config.txt"
