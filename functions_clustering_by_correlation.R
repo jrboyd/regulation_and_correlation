@@ -109,7 +109,7 @@ get_correlated_genes = function(as_plotted, col_clust, row_clust, min_correlatio
   return(list(pos = pos_corr, neg = pos_corr, summary = sum_mat))
 }
 
-plot_corr_blocks = function(as_plotted, sum_mat, corr_list, pdf_name){
+plot_corr_blocks = function(as_plotted, sum_mat, corr_list, pdf_name, ...){
   pdf(pdf_name)
   for(i in 1:length(corr_list)){
     nam = names(corr_list)[i]
@@ -124,8 +124,8 @@ plot_corr_blocks = function(as_plotted, sum_mat, corr_list, pdf_name){
     comb_dat = rbind(mRNA_dat, linc_dat)
     colors = c(rep("darkorange", nrow(mRNA_dat)), rep("darkblue", nrow(linc_dat)))
     ylim = range(comb_dat)
-    plot(0, xlim = c(1,4), ylim = ylim, type = "n", axes = F, ylab = "log2 FC from day 0", xlab = "day")
-    axis(side = 1, at = 1:4, labels = colnames(comb_dat))
+    plot(0, xlim = c(1,ncol(comb_dat)), ylim = ylim, type = "n", axes = F, ...)
+    axis(side = 1, at = 1:ncol(comb_dat), labels = colnames(comb_dat))
     axis(side = 2)
     for(j in 1:nrow(comb_dat)){
       lines(comb_dat[j,], col = colors[j], lwd = 2)

@@ -30,11 +30,15 @@ corrs = get_correlated_genes(as_plotted = cluster_info$as_plotted,
 plot_corr_blocks(as_plotted = cluster_info$as_plotted, 
                  sum_mat = corrs$summary, 
                  corr_list = corrs$pos, 
-                 pdf_name = "positively_corr_plots.pdf")
+                 pdf_name = "positively_corr_plots.pdf",
+                 ylab = paste("log2 FC from", colnames(agg_linc)[1]), 
+                 xlab = NUMERIC_COLUMN_PATTERN)
 plot_corr_blocks(as_plotted = cluster_info$as_plotted, 
                  sum_mat = corrs$summary, 
                  corr_list = corrs$neg, 
-                 pdf_name = "negatively_corr_plots.pdf")
+                 pdf_name = "negatively_corr_plots.pdf",
+                 ylab = paste("log2 FC from", colnames(agg_linc)[1]), 
+                 xlab = NUMERIC_COLUMN_PATTERN)
 
 write_corr_lists(as_plotted = cluster_info$as_plotted,
                  corr_list = corrs$pos, 
