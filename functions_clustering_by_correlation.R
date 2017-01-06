@@ -1,17 +1,8 @@
 
 
 #sets a series of global values after loading data
-setup_clustering_by_correlation = function(ref_file, mRNA_counts_file, linc_counts_file){
-  if(!exists("ensg_ref")){
-    print(paste("loading ensg_ref from:", ref_file))
-    ensg_ref = parse_gtf(ref_file, rownames_attrib = "gene_id", feature_type = "gene", additional_attrib = "gene_type")
-  }else{
-    warning("using previously loaded ensg_ref.")
-  }
-  genetype = ensg_ref[, c("gene_name", "gene_type")]
-  ensg2sym = as.character(genetype[,1])
-  names(ensg2sym) = rownames(genetype)
-  norm_mRNA = read.table(mRNA_counts_file)
+setup_clustering_by_correlation = function(mRNA_counts_file, linc_counts_file){
+    norm_mRNA = read.table(mRNA_counts_file)
   norm_lincs = read.table(linc_counts_file)
   #remove sense intronic lincs
   is_sense_intronic = genetype[rownames(norm_lincs),]$gene_type == "sense_intronic"
@@ -40,8 +31,8 @@ setup_clustering_by_correlation = function(ref_file, mRNA_counts_file, linc_coun
   agg_mRNA = log2(agg(norm_mRNA) + 1)
   agg_linc = log2(agg(norm_lincs) + 1)
   
-  ensg_ref <<- ensg_ref
-  ensg2sym <<- ensg2sym
+  # ensg_ref <<- ensg_ref
+  # ensg2sym <<- ensg2sym
   norm_mRNA <<- norm_mRNA
   norm_lincs <<- norm_lincs
   cors <<- cors

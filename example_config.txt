@@ -25,6 +25,7 @@ NUMERIC_COLUMN_PATTERN=day
 #
 #a gff file containing fields for gene_id, gene_name, and gene_type - in DATA_DIR or absolute path
 REF_FILE=gencode.v25.annotation_geneonly.gff
+ADD_EXONS_REF_FILE=Galaxy156-[hMSC_BMP2_novel_lncRNAs_gtf_no_22.txt].gff
 #
 #counts of mRNA and lncRNA, - in DATA_DIR or absolute path
 #column names should match and rownames should be ensembl gene_id 
