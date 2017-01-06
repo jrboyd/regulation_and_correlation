@@ -35,7 +35,18 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
   #test_res must be array of gene_id or whatever ref_dict uses as rownames or GenomicRanges
   #convert to GRanges
   ref_dict$seqnames = ref_dict$chrm
-  ref_gr = GRanges(ref_dict)
+  
+  #older version of GRanges aren't clever enough to create GRanges from data.frame based on colnames
+  smart_gr_from_df = function(df){
+    if(is.null(df$seqnames)){
+      df$seqnames = df$chrm
+      df$chrm  = NULL
+    }
+    gr = makeGRangesFromDataFrame(df, keep.extra.columns = T)
+    return(gr)
+  }
+  
+  ref_gr = smart_gr_from_df(ref_dict)
   if(class(test_res) == "character"){
     test_res = ref_gr[test_res,]
   }
@@ -44,7 +55,7 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
   }
   # setTxtProgressBar(pb, i)
   n_nearest = pblapply(test_res, function(x){
-    chrm_gr = GRanges(merge(data.frame(seqnames = seqnames(x)), ref_gr, by = "seqnames"))
+    chrm_gr = smart_gr_from_df(merge(data.frame(seqnames = seqnames(x)), ref_gr, by = "seqnames"))
     keep = chrm_gr$gene_name != x$gene_name
     chrm_gr = chrm_gr[keep]
     if(strandedness == "opposite"){
