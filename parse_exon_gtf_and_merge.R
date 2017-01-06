@@ -25,7 +25,9 @@ parse_exon_gtf_and_merge = function(exon_gtf_file, gene_type = "novel_lincRNA"){
     start = min(exon_gtf[k,4])
     end = max(exon_gtf[k,5])
     strand = exon_gtf[1,7]
-    novel_ref[g, ] = c(g, g, chrm, start, end, strand, gene_type)
+    novel_ref[g, c(1:3,6) ] = c(g, g, chrm,  strand)
+    novel_ref[g, c(4:5) ] = c(start, end)
+    novel_ref[g,7] = gene_type
   }
   return(novel_ref)
 }

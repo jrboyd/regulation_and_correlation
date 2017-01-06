@@ -2,7 +2,7 @@
 #check if mRNA are DE and also if their expression correlates with that of the linc.
 
 setwd(data_dir)
-setup_correlation_cis_regulatory(ref_file = REF_FILE, 
+setup_correlation_cis_regulatory(
                                  lnc_de_pattern = LNC_DE_PATTERN, 
                                  mrna_de_pattern = MRNA_DE_PATTERN)
 

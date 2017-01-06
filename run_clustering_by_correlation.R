@@ -1,6 +1,6 @@
 
 setwd(data_dir)
-setup_clustering_by_correlation(ref_file = REF_FILE, 
+setup_clustering_by_correlation(
                                 mRNA_counts_file = MRNA_COUNT_FILE, 
                                 linc_counts_file = LNC_COUNT_FILE)
 
