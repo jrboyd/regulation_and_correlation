@@ -1,7 +1,7 @@
 #directories controlling where data is loaded from and where output is sent
 #relative path are relative to MAIN_DIR
-MAIN_DIR=H:/projects/Coralee/regulation_and_correlation_public
-SCRIPT_DIR=H:/projects/Coralee/regulation_and_correlation_public
+MAIN_DIR=
+SCRIPT_DIR=
 DATA_DIR=example_data
 OUTPUT_DIR=example_output
 #
