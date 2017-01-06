@@ -44,6 +44,7 @@ source("heatmap.3-kmeans_wrapper.R")
 source("functions_clustering_by_correlation.R")
 
 # run the pipelines
+setwd(MAIN_DIR)
 source("run_clustering_by_correlation.R")
 setwd(MAIN_DIR)
 source("run_correlate_cis_regulatory.R")

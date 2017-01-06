@@ -40,9 +40,15 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
   smart_gr_from_df = function(df){
     if(is.null(df$seqnames)){
       df$seqnames = df$chrm
-      df$chrm  = NULL
     }
-    gr = makeGRangesFromDataFrame(df, keep.extra.columns = T)
+    df$chrm  = NULL
+    # gr = makeGRangesFromDataFrame(df, keep.extra.columns = T)
+    gr = GRanges(seqnames = df$seqnames, IRanges(df$start, df$end))
+    if(!is.null(df$strand)) strand(gr) = df$strand
+    for(cn in setdiff(colnames(df), c("seqnames", "start", "end", "strand", "width"))){
+      mcols(gr)[[cn]] = df[[cn]]
+    }
+    names(gr) = rownames(df)
     return(gr)
   }
   
@@ -55,7 +61,8 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
   }
   # setTxtProgressBar(pb, i)
   n_nearest = pblapply(test_res, function(x){
-    chrm_gr = smart_gr_from_df(merge(data.frame(seqnames = seqnames(x)), ref_gr, by = "seqnames"))
+    m = merge(data.frame(seqnames = seqnames(x)), as.data.frame(ref_gr), by = "seqnames")
+    chrm_gr = smart_gr_from_df(m)
     keep = chrm_gr$gene_name != x$gene_name
     chrm_gr = chrm_gr[keep]
     if(strandedness == "opposite"){
