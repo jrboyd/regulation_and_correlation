@@ -106,7 +106,7 @@ get_correlated_genes = function(as_plotted, col_clust, row_clust, min_correlatio
       return(mean(as_plotted[ensg_lincs, ensg_mRNA]))
     })
   }))
-  return(list(pos = pos_corr, neg = pos_corr, summary = sum_mat))
+  return(list(pos = pos_corr, neg = neg_corr, summary = sum_mat))
 }
 
 plot_corr_blocks = function(as_plotted, sum_mat, corr_list, pdf_name, ...){
