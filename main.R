@@ -21,7 +21,7 @@ if(CFG_FILE == "example_config.txt"){
     print("downloading example data...")
     library(httr)
     set_config(config(ssl_verifypeer = 0L))
-    download.file(url = "https://galaxy.med.uvm.edu/static/example_data.tar.gz", destfile = "example_data.tar.gz")
+    download.file(url = "https://galaxy.med.uvm.edu/static/example_data.tar.gz", destfile = "example_data.tar.gz", extra = "--no-check-certificate")
     print("untar...")
     untar("example_data.tar.gz")
   }

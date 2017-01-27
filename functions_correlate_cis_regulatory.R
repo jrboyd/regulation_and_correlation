@@ -60,7 +60,8 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
     stop(paste("test_res must be character array of rownames of ref_dict or a GRanges object. was", class(test_res)))
   }
   # setTxtProgressBar(pb, i)
-  n_nearest = pblapply(test_res, function(x){
+  n_nearest = pblapply(1:length(test_res), function(i){
+    x = test_res[i]
     m = merge(data.frame(seqnames = seqnames(x)), as.data.frame(ref_gr), by = "seqnames")
     chrm_gr = smart_gr_from_df(m)
     keep = chrm_gr$gene_name != x$gene_name
@@ -80,6 +81,7 @@ n_closest_features = function(test_res, ref_dict, n_closest, max_distance = 10^5
     chrm_gr = chrm_gr[keep]
     chrm_gr$gene_id
   })
+  names(n_nearest) = names(test_res)
   n_nearest
 }
 
